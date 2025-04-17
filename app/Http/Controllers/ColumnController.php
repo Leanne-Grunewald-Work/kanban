@@ -6,6 +6,7 @@ use App\Models\Column;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ColumnController extends Controller
 {
@@ -23,7 +24,7 @@ class ColumnController extends Controller
     public function create(Board $board)
     {
         //$this->authorize('update', $board); // optional policy
-        return view('columns.create', compact('board'));
+        //return view('columns.create', compact('board'));
     }
 
     /**
@@ -31,17 +32,13 @@ class ColumnController extends Controller
      */
     public function store(Request $request, Board $board)
     {
-        //$this->authorize('update', $board);
-
-        $request->validate([
+        $request->validateWithBag('column', [
             'title' => 'required|string|max:255',
         ]);
 
-        $maxOrder = $board->columns()->max('order') ?? 0;
-
         $board->columns()->create([
             'title' => $request->title,
-            'order' => $maxOrder + 1,
+            'order' => ($board->columns()->max('order') ?? 0) + 1,
         ]);
 
         return redirect()->route('boards.index');
@@ -62,7 +59,7 @@ class ColumnController extends Controller
     {
         //$this->authorize('update', $board);
 
-        return view('columns.edit', compact('board', 'column'));
+        //return view('columns.edit', compact('board', 'column'));
     }
 
     /**
@@ -72,14 +69,14 @@ class ColumnController extends Controller
     {
         //$this->authorize('update', $board);
 
-        $request->validate([
+        $request->validateWithBag('columnUpdate', [
             'title' => 'required|string|max:255',
         ]);
-
+    
         $column->update([
             'title' => $request->title,
         ]);
-
+    
         return redirect()->route('boards.index');
     }
 

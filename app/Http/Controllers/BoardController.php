@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Board;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BoardController extends Controller
 {
@@ -13,7 +14,7 @@ class BoardController extends Controller
      */
     public function index()
     {
-        $boards = auth()->user()->boards;
+        $boards = auth()->user()->boards()->with('columns.tasks')->get();
         return view('boards.index', compact('boards'));
     }
 
@@ -22,7 +23,7 @@ class BoardController extends Controller
      */
     public function create()
     {
-        return view('boards.create');
+        //return view('boards.create');
     }
 
     /**
@@ -30,16 +31,17 @@ class BoardController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255'
+        $request->validateWithBag('board', [
+            'title' => 'required|string|max:255',
         ]);
 
         auth()->user()->boards()->create([
-            'title' =>  $request->title
+            'title' => $request->title,
         ]);
 
         return redirect()->route('boards.index');
     }
+
 
     /**
      * Display the specified resource.
@@ -56,7 +58,7 @@ class BoardController extends Controller
     {
         //$this->authorize('update', $board); // Optional: Add policies
 
-        return view('boards.edit', compact('board'));
+        //return view('boards.edit', compact('board'));
 
 
     }
@@ -69,15 +71,16 @@ class BoardController extends Controller
 
         //$this->authorize('update', $board); // Optional: Add policies
 
-        $request->validate([
-            'title' => 'required|string|max:255'
+        $request->validateWithBag('boardUpdate', [
+            'title' => 'required|string|max:255',
         ]);
-
+    
         $board->update([
-            'title' =>  $request->title
+            'title' => $request->title,
         ]);
-
+    
         return redirect()->route('boards.index');
+
     }
 
     /**
