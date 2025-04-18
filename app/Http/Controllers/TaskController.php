@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\Column;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
 {
@@ -72,22 +73,35 @@ class TaskController extends Controller
      */
     public function update(Request $request, Board $board, Column $column, Task $task)
     {
-        //$this->authorize('update', $board);
-
-        $request->validateWithBag('taskUpdate', [
-            'title'         =>  'required|string|max:255',
-            'description'   =>  'nullable|string',
-            'due_date'      =>  'nullable|date',
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'due_date' => 'nullable|date',
         ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator, 'taskUpdate')
+                ->withInput()
+                ->with([
+                    'board_id' => $board->id,
+                    'column_id' => $column->id,
+                    'task_id' => $task->id,
+                    'old_title' => $request->title,
+                    'old_description' => $request->description,
+                    'old_due_date' => $request->due_date,
+                ]);
+        }
 
         $task->update([
-            'title'         =>  $request->title,
-            'description'   =>  $request->description,
-            'due_date'      =>  $request->due_date,
+            'title' => $request->title,
+            'description' => $request->description,
+            'due_date' => $request->due_date,
         ]);
 
-        return redirect()->route('boards.index');
+        return redirect()->route('boards.show', $board->id);
     }
+
 
     /**
      * Remove the specified resource from storage.

@@ -9,14 +9,18 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::resource('boards', BoardController::class);
+    
+    Route::get('/boards', [BoardController::class, 'index'])->name('boards.index'); // List all Boards
+    Route::get('/boards/{board}', [BoardController::class, 'show'])->name('boards.show'); // Show selected Board
+
+    Route::resource('boards', BoardController::class)->except(['index', 'show']); // Use resource routes except index/show
 
     Route::prefix('boards/{board}')->group(function () {
         Route::resource('columns', ColumnController::class)->except(['show']);
     });
 
     Route::prefix('boards/{board}/columns/{column}')->group(function () {
-        Route::resource('tasks', TaskController::class)->names('tasks');
+        Route::resource('tasks', TaskController::class);
     });
 
     Route::prefix('boards/{board}/columns/{column}/tasks/{task}')->group(function () {

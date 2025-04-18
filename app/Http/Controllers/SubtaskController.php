@@ -32,14 +32,21 @@ class SubtaskController extends Controller
      */
     public function store(Request $request, Board $board, Column $column, Task $task)
     {
-        $request->validateWithBag('subtask', [
+
+        $request->merge(json_decode($request->getContent(), true));
+
+
+        $request->validate([
             'title' => 'required|string|max:255',
         ]);
-    
+
         $task->subtasks()->create(['title' => $request->title]);
-    
-        return back();
+
+        return response()->json([
+            'subtasks' => $task->subtasks()->get()
+        ]);
     }
+
 
     /**
      * Display the specified resource.
@@ -84,20 +91,23 @@ class SubtaskController extends Controller
         return back();
     }
 
-    public function toggle(Board $board, Column $column, Task $task, Subtask $subtask)
+    public function toggle(Request $request, Board $board, Column $column, Task $task, Subtask $subtask)
     {
-
-        //dd($subtask->toArray());
-
-        // Ensure subtask belongs to this task
+        // Extra safety: check
         if ($subtask->task_id !== $task->id) {
-            abort(404);
+            return response()->json(['error' => 'Subtask not found for task.'], 404);
         }
 
         $subtask->update([
             'is_completed' => !$subtask->is_completed,
         ]);
 
-        return back();
+        return response()->json([
+            'subtasks' => $task->subtasks()->get()
+        ]);
     }
+
+
+
+
 }

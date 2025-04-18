@@ -14,7 +14,13 @@ class BoardController extends Controller
      */
     public function index()
     {
-        $boards = auth()->user()->boards()->with('columns.tasks')->get();
+        $boards = Board::where('user_id', auth()->id())->get();
+
+        // Default to first board if exists
+        if ($boards->isNotEmpty()) {
+            return redirect()->route('boards.show', $boards->first()->id);
+        }
+
         return view('boards.index', compact('boards'));
     }
 
@@ -48,7 +54,12 @@ class BoardController extends Controller
      */
     public function show(Board $board)
     {
-        //
+        $boards = Board::where('user_id', auth()->id())->get(); // Needed for sidebar
+
+        // Load columns and tasks for the selected board
+        $board->load('columns.tasks.subtasks');
+
+        return view('boards.index', compact('boards', 'board'));
     }
 
     /**

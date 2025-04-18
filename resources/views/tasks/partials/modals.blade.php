@@ -6,8 +6,20 @@
         <form id="createTaskForm" method="POST">
             @csrf
 
+            <input type="hidden" id="taskBoardId" name="board_id">
+
             <div class="mb-4">
-                <label class="block text-sm font-medium">Title</label>
+                <label class="block text-sm font-medium">Column</label>
+                <select id="taskColumnSelect" name="column_id" class="w-full border rounded px-3 py-2 mt-1" required onchange="updateTaskFormAction()">
+                    <option value="">Select column...</option>
+                    @foreach($board->columns as $column)
+                        <option value="{{ $column->id }}">{{ $column->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium">Task Title</label>
                 <input type="text" name="title" id="createTaskTitle" class="w-full border rounded px-3 py-2 mt-1" required>
             </div>
 
@@ -42,6 +54,7 @@
     </div>
 </div>
 
+
 @if ($errors->task->any())
     <script>
         window.onload = function () {
@@ -52,6 +65,22 @@
 @endif
 
 <!-- Edit Task Modal -->
+@if ($errors->taskUpdate->any())
+    <script>
+        window.onload = function () {
+            openEditTaskModal(
+                {{ session('board_id') }},
+                {{ session('column_id') }},
+                {{ session('task_id') }}
+            );
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+    </script>
+@endif
+
+<input type="hidden" id="old_edit_task_title" value="{{ old('title') }}">
+<input type="hidden" id="old_edit_task_description" value="{{ old('description') }}">
+<input type="hidden" id="old_edit_task_due_date" value="{{ old('due_date') }}">
 <div id="editTaskModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
     <div class="bg-white p-6 rounded-lg w-96">
         <h2 class="text-xl font-bold mb-4">Edit Task</h2>
@@ -95,15 +124,6 @@
         </form>
     </div>
 </div>
-
-@if ($errors->taskUpdate->any())
-    <script>
-        window.onload = function () {
-            document.getElementById('editTaskModal').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    </script>
-@endif
 
 
 <!-- Delete Task Modal -->

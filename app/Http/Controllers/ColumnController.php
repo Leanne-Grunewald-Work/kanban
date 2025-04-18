@@ -32,16 +32,22 @@ class ColumnController extends Controller
      */
     public function store(Request $request, Board $board)
     {
-        $request->validateWithBag('column', [
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
         ]);
-
+    
+        if ($validator->fails()) {
+            return back()->withErrors($validator, 'columnCreate')->withInput();
+        }
+    
+        $maxOrder = $board->columns()->max('order') ?? 0;
+    
         $board->columns()->create([
             'title' => $request->title,
-            'order' => ($board->columns()->max('order') ?? 0) + 1,
+            'order' => $maxOrder + 1,
         ]);
-
-        return redirect()->route('boards.index');
+    
+        return redirect()->route('boards.show', $board->id);
     }
 
     /**

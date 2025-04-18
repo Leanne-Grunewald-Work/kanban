@@ -51,18 +51,17 @@
             @method('PUT')
 
             <div class="mb-4">
-                <label class="block text-sm font-medium">Title</label>
+                <label class="block text-sm font-medium">Board Title</label>
                 <input type="text" name="title" id="editBoardTitle" class="w-full border rounded px-3 py-2 mt-1" required>
             </div>
 
             @if ($errors->boardUpdate->any())
-                <div class="text-red-500 text-sm mt-1">
+                <div class="text-red-500 text-sm mb-4">
                     @foreach ($errors->boardUpdate->all() as $error)
                         <p>{{ $error }}</p>
                     @endforeach
                 </div>
             @endif
-
 
             <div class="flex justify-end space-x-2">
                 <button type="button" onclick="document.getElementById('editBoardModal').classList.add('hidden')"
@@ -76,6 +75,7 @@
         </form>
     </div>
 </div>
+
 
 @if ($errors->boardUpdate->any())
     <script>
@@ -112,6 +112,52 @@
         </form>
     </div>
 </div>
+
+
+<!-- Create Column Modal -->
+<div id="createColumnModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white p-6 rounded-lg w-96">
+        <h2 class="text-xl font-bold mb-4">Add New Column</h2>
+
+        <form id="createColumnForm" method="POST">
+            @csrf
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium">Column Title</label>
+                <input type="text" name="title" id="createColumnTitle" class="w-full border rounded px-3 py-2 mt-1" required>
+            </div>
+
+            @if ($errors->columnCreate->any())
+                <div class="text-red-500 text-sm mb-4">
+                    @foreach ($errors->columnCreate->all() as $error)
+                        <p>{{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="document.getElementById('createColumnModal').classList.add('hidden')"
+                        class="bg-gray-300 px-4 py-2 rounded">
+                    Cancel
+                </button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+                    Add
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if ($errors->columnCreate->any())
+    <script>
+        window.onload = function () {
+            document.getElementById('createColumnModal').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+@endif
+
+
 
 <!-- Edit Column Modal -->
 <div id="editColumnModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
