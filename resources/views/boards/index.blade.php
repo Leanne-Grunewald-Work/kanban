@@ -24,22 +24,18 @@
 
                     <ul class="mt-2 ml-4">
                         @foreach($board->columns as $column)
-                            <li class="flex justify-between items-center border-b py-1">
-                                <span>{{ $column->title }}</span>
-                                <div class="space-x-2">
-                                    <button
-                                        onclick="openEditColumnModal({{ $board->id }}, {{ $column->id }}, '{{ addslashes($column->title) }}')"
-                                        class="text-sm text-blue-500 hover:underline">
-                                        Edit Column
-                                    </button>
-
-                                    <button onclick="openDeleteColumnModal({{ $board->id }}, {{ $column->id }}, '{{ addslashes($column->title) }}')"
-                                        class="text-sm text-red-500 hover:underline">
-                                        Delete
-                                    </button>
-                                    
+                            <li class="flex flex-col border-b py-2">
+                                <div class="flex justify-between items-center">
+                                    <span>{{ $column->title }}</span>
+                                    <div class="space-x-2">
+                                        <button onclick="openEditColumnModal({{ $board->id }}, {{ $column->id }}, '{{ addslashes($column->title) }}')"
+                                                class="text-sm text-blue-500 hover:underline">Edit Column</button>
+                                        <button onclick="openDeleteColumnModal({{ $board->id }}, {{ $column->id }}, '{{ addslashes($column->title) }}')"
+                                                class="text-sm text-red-500 hover:underline">Delete</button>
+                                    </div>
                                 </div>
-                                <ul class="ml-4">
+
+                                <ul class="ml-4 mt-2">
                                     @foreach ($column->tasks as $task)
                                         <li class="flex justify-between border-b py-1">
                                             <div>
@@ -47,19 +43,71 @@
                                                 @if ($task->due_date)
                                                     <small class="text-gray-500 block">Due: {{ $task->due_date }}</small>
                                                 @endif
+                                                @if ($task->description)
+                                                    <p class="text-gray-600 text-sm">{{ $task->description }}</p>
+                                                @endif
+
+                                                @if($task->subtasks->count())
+                                                    <ul class="ml-4 mt-2">
+                                                        @foreach($task->subtasks as $subtask)
+                                                            <li class="flex items-center space-x-2">
+                                                                <form action="{{ route('subtasks.toggle', [$board, $column, $task, $subtask]) }}" method="POST" class="flex items-center space-x-2">
+                                                                    @csrf
+                                                                    @method('PATCH')
+                                                                    <input type="checkbox" onchange="this.form.submit()" {{ $subtask->is_completed ? 'checked' : '' }}>
+                                                                    <span class="{{ $subtask->is_completed ? 'line-through text-gray-500' : '' }}">{{ $subtask->title }}</span>
+                                                                </form>
+
+                                                                <button type="button"
+                                                                    onclick="openEditSubtaskModal({{ $board->id }}, {{ $column->id }}, {{ $task->id }}, {{ $subtask->id }}, '{{ addslashes($subtask->title) }}')"
+                                                                    class="text-blue-500 text-xs hover:underline ml-2">
+                                                                    Edit Subtask
+                                                                </button>
+
+                                                                <button type="button"
+                                                                    onclick="openDeleteSubtaskModal({{ $board->id }}, {{ $column->id }}, {{ $task->id }}, {{ $subtask->id }}, '{{ addslashes($subtask->title) }}')"
+                                                                    class="text-red-500 text-xs hover:underline ml-2">
+                                                                    Delete Subtask
+                                                                </button>
+
+
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                                <form action="{{ route('subtasks.store', [$board, $column, $task]) }}" method="POST" class="flex items-center space-x-2 mt-2">
+                                                    @csrf
+                                                    <input type="text" name="title" placeholder="New subtask..." class="border rounded px-2 py-1 text-sm" required>
+                                                    <button type="submit" class="bg-blue-500 text-white px-2 py-1 rounded text-sm">Add</button>
+                                                </form>
+                                                
+                                                @if ($errors->subtask->any())
+                                                    <div class="text-red-500 text-sm mt-1">
+                                                        @foreach ($errors->subtask->all() as $error)
+                                                            <p>{{ $error }}</p>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                
+                                                
+
                                             </div>
                                             <div class="space-x-2">
-                                                <a href="{{ route('tasks.edit', [$board, $column, $task]) }}" class="text-blue-500">Edit</a>
-                                                <form action="{{ route('tasks.destroy', [$board, $column, $task]) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button onclick="return confirm('Delete this task?')" class="text-red-500">Delete</button>
-                                                </form>
+                                                <button onclick="openEditTaskModal({{ $board->id }}, {{ $column->id }}, {{ $task->id }}, '{{ addslashes($task->title) }}', '{{ addslashes($task->description ?? '') }}', '{{ $task->due_date }}')"
+                                                    class="text-blue-500 text-sm hover:underline">Edit Task</button>
+                                                
+                                                <button onclick="openDeleteTaskModal({{ $board->id }}, {{ $column->id }}, {{ $task->id }}, '{{ addslashes($task->title) }}')"
+                                                        class="text-red-500 text-sm hover:underline">
+                                                    Delete Task
+                                                </button>
+                                                
                                             </div>
                                         </li>
                                     @endforeach
-                                    <li class="mt-1">
-                                        <a href="{{ route('tasks.create', [$board, $column]) }}" class="text-green-600">+ Add Task</a>
+
+                                    <li class="mt-2">
+                                        <button onclick="openCreateTaskModal({{ $board->id }}, {{ $column->id }})"
+                                                class="text-green-600 text-sm hover:underline">+ Add Task</button>
                                     </li>
                                 </ul>
                             </li>
@@ -72,7 +120,7 @@
                     </ul>
                 </li>
 
-                <!-- Add Column Modal for this Board -->
+                <!-- Add Column Modal -->
                 <div id="addColumnModal-{{ $board->id }}" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
                     <div class="bg-white p-6 rounded-lg w-96">
                         <h2 class="text-xl font-bold mb-4">Add Column</h2>
@@ -110,7 +158,7 @@
                     <script>
                         window.onload = function() {
                             document.getElementById('addColumnModal-{{ $board->id }}').classList.remove('hidden');
-                            window.scrollTo({ top: 50, behavior: 'smooth' });
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     </script>
                 @endif
@@ -120,6 +168,7 @@
     </div>
 
     @include('boards.partials.modals')
+    @include('tasks.partials.modals')
 
     <script>
         function openEditModal(boardId, boardTitle) {
@@ -144,10 +193,8 @@
             const modal = document.getElementById('editColumnModal');
             const form = document.getElementById('editColumnForm');
             const input = document.getElementById('editColumnTitle');
-
             input.value = columnTitle;
             form.action = `/boards/${boardId}/columns/${columnId}`;
-
             modal.classList.remove('hidden');
         }
 
@@ -155,11 +202,68 @@
             const modal = document.getElementById('deleteColumnModal');
             const form = document.getElementById('deleteColumnForm');
             const titleSpan = document.getElementById('columnToDeleteTitle');
-
             form.action = `/boards/${boardId}/columns/${columnId}`;
             titleSpan.textContent = columnTitle;
+            modal.classList.remove('hidden');
+        }
+
+        function openCreateTaskModal(boardId, columnId) {
+            const modal = document.getElementById('createTaskModal');
+            const form = document.getElementById('createTaskForm');
+            form.action = `/boards/${boardId}/columns/${columnId}/tasks`;
+            document.getElementById('createTaskTitle').value = '';
+            document.getElementById('createTaskDescription').value = '';
+            document.getElementById('createTaskDueDate').value = '';
+            modal.classList.remove('hidden');
+        }
+
+        function openEditTaskModal(boardId, columnId, taskId, title, description, dueDate) {
+            const modal = document.getElementById('editTaskModal');
+            const form = document.getElementById('editTaskForm');
+
+            form.action = `/boards/${boardId}/columns/${columnId}/tasks/${taskId}`;
+
+            document.getElementById('editTaskTitle').value = title;
+            document.getElementById('editTaskDescription').value = description;
+            document.getElementById('editTaskDueDate').value = dueDate;
 
             modal.classList.remove('hidden');
         }
+
+        function openDeleteTaskModal(boardId, columnId, taskId, taskTitle) {
+            const modal = document.getElementById('deleteTaskModal');
+            const form = document.getElementById('deleteTaskForm');
+            const titleSpan = document.getElementById('taskToDeleteTitle');
+
+            form.action = `/boards/${boardId}/columns/${columnId}/tasks/${taskId}`;
+            titleSpan.textContent = taskTitle;
+
+            modal.classList.remove('hidden');
+        }
+
+        function openEditSubtaskModal(boardId, columnId, taskId, subtaskId, subtaskTitle) {
+            const modal = document.getElementById('editSubtaskModal');
+            const form = document.getElementById('editSubtaskForm');
+            const input = document.getElementById('editSubtaskTitle');
+
+            form.action = `/boards/${boardId}/columns/${columnId}/tasks/${taskId}/subtasks/${subtaskId}/edit`;
+            input.value = subtaskTitle;
+
+            modal.classList.remove('hidden');
+        }
+
+        function openDeleteSubtaskModal(boardId, columnId, taskId, subtaskId, subtaskTitle) {
+            const modal = document.getElementById('deleteSubtaskModal');
+            const form = document.getElementById('deleteSubtaskForm');
+            const titleSpan = document.getElementById('subtaskToDeleteTitle');
+
+            form.action = `/boards/${boardId}/columns/${columnId}/tasks/${taskId}/subtasks/${subtaskId}`;
+            titleSpan.textContent = subtaskTitle;
+
+            modal.classList.remove('hidden');
+        }
+
+
+
     </script>
 </x-app-layout>

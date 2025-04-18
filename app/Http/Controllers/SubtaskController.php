@@ -32,12 +32,12 @@ class SubtaskController extends Controller
      */
     public function store(Request $request, Board $board, Column $column, Task $task)
     {
-        $request->validate([
+        $request->validateWithBag('subtask', [
             'title' => 'required|string|max:255',
         ]);
-
+    
         $task->subtasks()->create(['title' => $request->title]);
-
+    
         return back();
     }
 
@@ -60,10 +60,19 @@ class SubtaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Subtask $subtask)
+    public function update(Request $request, Board $board, Column $column, Task $task, Subtask $subtask)
     {
-        //
+        $request->validateWithBag('subtaskUpdate', [
+            'title' => 'required|string|max:255',
+        ]);
+
+        $subtask->update([
+            'title' => $request->title,
+        ]);
+
+        return back();
     }
+
 
     /**
      * Remove the specified resource from storage.

@@ -16,12 +16,13 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('boards/{board}/columns/{column}')->group(function () {
-        Route::resource('tasks', TaskController::class);
+        Route::resource('tasks', TaskController::class)->names('tasks');
     });
 
     Route::prefix('boards/{board}/columns/{column}/tasks/{task}')->group(function () {
         Route::post('subtasks', [SubtaskController::class, 'store'])->name('subtasks.store');
         Route::patch('subtasks/{subtask}', [SubtaskController::class, 'toggle'])->name('subtasks.toggle');
+        Route::patch('subtasks/{subtask}/edit', [SubtaskController::class, 'update'])->name('subtasks.update');
         Route::delete('subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('subtasks.destroy');
     });
 });

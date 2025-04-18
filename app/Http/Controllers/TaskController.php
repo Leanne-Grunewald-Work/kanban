@@ -24,7 +24,7 @@ class TaskController extends Controller
     public function create(Board $board, Column $column)
     {
         //$this->authorize('update', $board); // optional policy
-        return view('tasks.create', compact('board', 'column'));
+        //return view('tasks.create', compact('board', 'column'));
     }
 
     /**
@@ -34,7 +34,7 @@ class TaskController extends Controller
     {
         //$this->authorize('update', $board);
 
-        $request->validate([
+        $request->validateWithBag('task', [
             'title'         =>  'required|string|max:255',
             'description'   =>  'nullable|string',
             'due_date'      =>  'nullable|date',
@@ -54,7 +54,7 @@ class TaskController extends Controller
      */
     public function show(Board $board, Column $column, Task $task)
     {
-        return view('tasks.show', compact('board', 'column', 'task'));
+        //return view('tasks.show', compact('board', 'column', 'task'));
     }
 
     /**
@@ -64,7 +64,7 @@ class TaskController extends Controller
     {
         //$this->authorize('update', $board);
 
-        return view('tasks.edit', compact('board', 'column', 'task'));
+        //return view('tasks.edit', compact('board', 'column', 'task'));
     }
 
     /**
@@ -74,13 +74,17 @@ class TaskController extends Controller
     {
         //$this->authorize('update', $board);
 
-        $request->validate([
+        $request->validateWithBag('taskUpdate', [
             'title'         =>  'required|string|max:255',
             'description'   =>  'nullable|string',
             'due_date'      =>  'nullable|date',
         ]);
 
-        $task->update($request->only('title', 'description', 'due_date'));
+        $task->update([
+            'title'         =>  $request->title,
+            'description'   =>  $request->description,
+            'due_date'      =>  $request->due_date,
+        ]);
 
         return redirect()->route('boards.index');
     }
