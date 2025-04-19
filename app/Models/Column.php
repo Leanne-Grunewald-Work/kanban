@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Column extends Model
 {
 
-    protected $fillable = [
-        'title'
-    ];
+    protected $fillable = ['title'];
 
     public function board()
     {

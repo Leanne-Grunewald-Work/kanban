@@ -6,14 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
-
     protected $fillable = [
         'title',
         'description',
-        'due_date'
+        'due_date',
     ];
 
-    public function columns()
+    public function column()
     {
         return $this->belongsTo(Column::class);
     }

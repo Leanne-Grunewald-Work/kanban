@@ -1,5 +1,3 @@
-<!-- resources/views/tasks/partials/details.blade.php -->
-
 <!-- Task Details Modal -->
 <div id="taskDetailsModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
     <div class="bg-white p-6 rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
@@ -40,7 +38,7 @@
     let currentColumnId = null;
     let currentTaskId = null;
 
-    function openTaskDetailsModal(boardId, columnId, taskId, title, description, dueDate, subtasksJson) {
+    async function openTaskDetailsModal(boardId, columnId, taskId, title, description, dueDate, subtasksJson = null) {
         currentBoardId = boardId;
         currentColumnId = columnId;
         currentTaskId = taskId;
@@ -52,33 +50,61 @@
         const subtasksContainer = document.getElementById('taskDetailsSubtasks');
         subtasksContainer.innerHTML = '';
 
-        const subtasks = latestSubtasks.length ? latestSubtasks : JSON.parse(subtasksJson);
-
-        subtasks.forEach(subtask => {
-            const li = document.createElement('li');
-            li.classList.add('flex', 'items-center', 'space-x-2');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = subtask.is_completed;
-            checkbox.addEventListener('change', () => toggleSubtask(subtask.id));
-
-            const span = document.createElement('span');
-            span.textContent = subtask.title;
-            if (subtask.is_completed) {
-                span.classList.add('line-through', 'text-gray-500');
+        // Always fetch fresh subtasks
+        try {
+            const response = await fetch(`/boards/${boardId}/columns/${columnId}/tasks/${taskId}/subtasks`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch subtasks.');
             }
 
+            const data = await response.json();
+            latestSubtasks = data.subtasks;
 
-            li.appendChild(checkbox);
-            li.appendChild(span);
-            subtasksContainer.appendChild(li);
-        });
+            latestSubtasks.forEach(subtask => {
+                const li = document.createElement('li');
+                li.classList.add('flex', 'items-center', 'space-x-2');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = subtask.is_completed;
+                checkbox.addEventListener('change', () => toggleSubtask(subtask.id));
+
+                const span = document.createElement('span');
+                span.textContent = subtask.title;
+                if (subtask.is_completed) {
+                    span.classList.add('line-through', 'text-gray-500');
+                }
+
+                const editButton = document.createElement('button');
+                editButton.classList.add('text-blue-400', 'hover:text-blue-600', 'text-xs');
+                editButton.innerHTML = '✏️';
+                editButton.onclick = () => openEditSubtaskModal(subtask.id, subtask.title);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('text-red-400', 'hover:text-red-600', 'text-xs');
+                deleteButton.innerHTML = '🗑️';
+                deleteButton.onclick = () => openDeleteSubtaskModal(subtask.id, subtask.title);
+
+                li.appendChild(checkbox);
+                li.appendChild(span);
+                li.appendChild(editButton);
+                li.appendChild(deleteButton);
+
+                subtasksContainer.appendChild(li);
+            });
+
+        } catch (error) {
+            alert(error.message);
+        }
 
         document.getElementById('addSubtaskForm').action = `/boards/${boardId}/columns/${columnId}/tasks/${taskId}/subtasks`;
 
         document.getElementById('taskDetailsModal').classList.remove('hidden');
     }
+
+
+
+
 
 
 
@@ -93,7 +119,10 @@
         if (summaryElement) {
             summaryElement.textContent = `${completedSubtasks} of ${totalSubtasks} subtasks`;
         }
+
+        latestSubtasks = []; // reset after closing
     }
+
 
 
     document.getElementById('addSubtaskForm').addEventListener('submit', async function(e) {
@@ -124,7 +153,7 @@
                 throw new Error('Failed to add subtask.');
             }
 
-            const data = await response.json(); // expecting a fresh updated list of subtasks!
+            const data = await response.json(); // expecting a fresh updated list of subtasks
 
             // Re-render subtasks
             refreshSubtaskList(data.subtasks);

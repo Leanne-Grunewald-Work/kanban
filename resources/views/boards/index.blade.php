@@ -181,7 +181,7 @@
             const modal = document.getElementById('createTaskModal');
             const form = document.getElementById('createTaskForm');
 
-            form.action = ''; // We'll dynamically update based on column selection
+            form.action = '';
             document.getElementById('createTaskTitle').value = '';
             document.getElementById('createTaskDescription').value = '';
             document.getElementById('createTaskDueDate').value = '';
@@ -189,19 +189,6 @@
 
             modal.classList.remove('hidden');
         }
-
-        function updateTaskFormAction() {
-            const boardId = document.getElementById('taskBoardId').value;
-            const columnId = document.getElementById('taskColumnSelect').value;
-            const form = document.getElementById('createTaskForm');
-
-            if (columnId) {
-                form.action = `/boards/${boardId}/columns/${columnId}/tasks`;
-            } else {
-                form.action = '';
-            }
-        }
-
 
         function openEditTaskModal(boardId, columnId, taskId, title = '', description = '', dueDate = '') {
             const modal = document.getElementById('editTaskModal');
@@ -221,9 +208,6 @@
             modal.classList.remove('hidden');
         }
 
-
-
-
         function openDeleteTaskModal(boardId, columnId, taskId, taskTitle) {
             const modal = document.getElementById('deleteTaskModal');
             const form = document.getElementById('deleteTaskForm');
@@ -233,6 +217,18 @@
             titleSpan.textContent = taskTitle;
 
             modal.classList.remove('hidden');
+        }
+
+        function updateTaskFormAction() {
+            const boardId = document.getElementById('taskBoardId').value;
+            const columnId = document.getElementById('taskColumnSelect').value;
+            const form = document.getElementById('createTaskForm');
+
+            if (columnId) {
+                form.action = `/boards/${boardId}/columns/${columnId}/tasks`;
+            } else {
+                form.action = '';
+            }
         }
 
         let latestSubtasks = [];
@@ -258,8 +254,22 @@
                     span.classList.add('line-through', 'text-gray-500');
                 }
 
+                // Edit button
+                const editButton = document.createElement('button');
+                editButton.classList.add('text-blue-400', 'hover:text-blue-600', 'text-xs');
+                editButton.innerHTML = '✏️';
+                editButton.onclick = () => openEditSubtaskModal(subtask.id, subtask.title);
+
+                // Delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('text-red-400', 'hover:text-red-600', 'text-xs');
+                deleteButton.innerHTML = '🗑️';
+                deleteButton.onclick = () => openDeleteSubtaskModal(subtask.id, subtask.title);
+
                 li.appendChild(checkbox);
                 li.appendChild(span);
+                li.appendChild(editButton);
+                li.appendChild(deleteButton);
 
                 subtasksContainer.appendChild(li);
             });
@@ -267,10 +277,11 @@
 
 
 
+
         async function toggleSubtask(subtaskId) {
         try {
             const response = await fetch(`/boards/${currentBoardId}/columns/${currentColumnId}/tasks/${currentTaskId}/subtasks/${subtaskId}`, {
-                method: 'PATCH', // 
+                method: 'PATCH', 
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken, // This should match meta tag
@@ -282,11 +293,151 @@
             }
 
             const data = await response.json();
+            latestSubtasks = data.subtasks; 
             refreshSubtaskList(data.subtasks);
         } catch (error) {
             alert(error.message);
         }
     }
+
+    function openEditSubtaskModal(subtaskId, subtaskTitle) {
+        const modal = document.getElementById('editSubtaskModal');
+        const form = document.getElementById('editSubtaskForm');
+        const input = document.getElementById('editSubtaskTitle');
+
+        input.value = subtaskTitle;
+        form.action = `/boards/${currentBoardId}/columns/${currentColumnId}/tasks/${currentTaskId}/subtasks/${subtaskId}/edit`;
+
+        modal.classList.remove('hidden');
+    }
+
+    function openDeleteSubtaskModal(subtaskId, subtaskTitle) {
+        const modal = document.getElementById('deleteSubtaskModal');
+        const form = document.getElementById('deleteSubtaskForm');
+        const titleSpan = document.getElementById('subtaskToDeleteTitle');
+
+        titleSpan.textContent = subtaskTitle;
+        form.action = `/boards/${currentBoardId}/columns/${currentColumnId}/tasks/${currentTaskId}/subtasks/${subtaskId}`;
+
+        modal.classList.remove('hidden');
+    }
+
+
+    document.getElementById('editSubtaskForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const url = form.action;
+        const title = document.getElementById('editSubtaskTitle').value.trim();
+        
+        if (!title) {
+            alert('Title cannot be empty.');
+            return;
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ title })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update subtask.');
+            }
+
+            const data = await response.json(); // Expecting fresh list
+            latestSubtasks = data.subtasks;
+            refreshSubtaskList(data.subtasks);
+
+            document.getElementById('editSubtaskModal').classList.add('hidden');
+
+            openTaskDetailsModal(
+                currentBoardId, 
+                currentColumnId, 
+                currentTaskId, 
+                document.getElementById('taskDetailsTitle').textContent,
+                document.getElementById('taskDetailsDescription').textContent,
+                document.getElementById('taskDetailsDueDate').textContent.replace('Due: ', ''),
+                null
+            );
+
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+
+
+    document.getElementById('deleteSubtaskForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const url = form.action;
+
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete subtask.');
+            }
+
+            const data = await response.json();
+            latestSubtasks = data.subtasks; 
+            refreshSubtaskList(latestSubtasks);
+
+            document.getElementById('deleteSubtaskModal').classList.add('hidden');
+
+            await fetchTaskDetails(); 
+
+            // After fetching, reopen the task modal
+            openTaskDetailsModal(
+                currentBoardId,
+                currentColumnId,
+                currentTaskId,
+                document.getElementById('taskDetailsTitle').textContent,
+                document.getElementById('taskDetailsDescription').textContent,
+                document.getElementById('taskDetailsDueDate').textContent.replace('Due: ', ''),
+                null
+            );
+
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+
+
+    async function fetchTaskDetails() {
+        try {
+            const response = await fetch(`/boards/${currentBoardId}/columns/${currentColumnId}/tasks/${currentTaskId}/subtasks`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch task subtasks.');
+            }
+
+            const data = await response.json();
+            latestSubtasks = data.subtasks;
+
+            refreshSubtaskList(latestSubtasks);
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+
+
+
+
+
 
 
 

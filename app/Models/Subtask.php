@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subtask extends Model
 {
-
     protected $fillable = [
         'title',
         'is_completed',
-        'task_id'
+        'task_id',
     ];
 
     public function task()

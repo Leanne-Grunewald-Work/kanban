@@ -2,81 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Task;
-use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Board $board, Column $column)
-    {
-        //$this->authorize('update', $board); // optional policy
-        //return view('tasks.create', compact('board', 'column'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request, Board $board, Column $column)
     {
-        //$this->authorize('update', $board);
-
         $request->validateWithBag('task', [
             'title'         =>  'required|string|max:255',
             'description'   =>  'nullable|string',
             'due_date'      =>  'nullable|date',
         ]);
 
-        $column->tasks()->create([
-            'title'         =>  $request->title,
-            'description'   =>  $request->description,
-            'due_date'      =>  $request->due_date,
-        ]);
+        $column->tasks()->create($request->only('title', 'description', 'due_date'));
 
-        return redirect()->route('boards.index');
+        return redirect()->route('boards.show', $board->id); 
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Board $board, Column $column, Task $task)
-    {
-        //return view('tasks.show', compact('board', 'column', 'task'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Board $board, Column $column, Task $task)
-    {
-        //$this->authorize('update', $board);
-
-        //return view('tasks.edit', compact('board', 'column', 'task'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Board $board, Column $column, Task $task)
     {
+
+        // Can contain previous data from task that needs to be remember if there is a mistake
+
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
+            'title'         =>  'required|string|max:255',
+            'description'   =>  'nullable|string',
+            'due_date'      =>  'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -84,34 +39,21 @@ class TaskController extends Controller
                 ->withErrors($validator, 'taskUpdate')
                 ->withInput()
                 ->with([
-                    'board_id' => $board->id,
-                    'column_id' => $column->id,
-                    'task_id' => $task->id,
-                    'old_title' => $request->title,
-                    'old_description' => $request->description,
-                    'old_due_date' => $request->due_date,
+                    'board_id'  =>  $board->id,
+                    'column_id' =>  $column->id,
+                    'task_id'   =>  $task->id,
                 ]);
         }
 
-        $task->update([
-            'title' => $request->title,
-            'description' => $request->description,
-            'due_date' => $request->due_date,
-        ]);
+        $task->update($request->only('title', 'description', 'due_date'));
 
         return redirect()->route('boards.show', $board->id);
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Board $board, Column $column, Task $task)
     {
-        //$this->authorize('delete', $board);
-
         $task->delete();
 
-        return redirect()->route('boards.index');
+        return redirect()->route('boards.show', $board->id);
     }
 }

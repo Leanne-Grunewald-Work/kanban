@@ -154,7 +154,8 @@
 
 
 <!-- Edit Subtask Modal -->
-<div id="editSubtaskModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+<div id="editSubtaskModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" style="z-index: 999;">
+
     <div class="bg-white p-6 rounded-lg w-96">
         <h2 class="text-xl font-bold mb-4">Edit Subtask</h2>
 
@@ -190,7 +191,8 @@
 
 
 <!-- Delete Subtask Modal -->
-<div id="deleteSubtaskModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+<div id="deleteSubtaskModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" style="z-index: 999;">
+
     <div class="bg-white p-6 rounded-lg w-96">
         <h2 class="text-xl font-bold mb-4 text-red-600">Delete Subtask</h2>
         <p class="mb-4 text-gray-700">
